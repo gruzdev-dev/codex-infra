@@ -1,0 +1,20 @@
+# Values for the codex-files microservice
+replicaCount: 1
+
+image:
+  repository: gruzdev-dev/codex-files # Замени на свой реальный Docker-репозиторий
+  tag: "0.1.0"
+
+service:
+  port: 8082
+
+podAnnotations:
+  linkerd.io/inject: enabled
+
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: ingress-nginx
