@@ -21,6 +21,8 @@ cluster:
 ingress:
 	@echo "🚪 Installing Nginx Ingress Controller..."
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+	@echo "💤 Giving K8s a moment to create pods..."
+	sleep 10
 	@echo "⏳ Waiting for Ingress..."
 	kubectl wait --namespace ingress-nginx \
 	  --for=condition=ready pod \
