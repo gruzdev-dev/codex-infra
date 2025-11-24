@@ -15,31 +15,31 @@ restart: down up
 .PHONY: cluster ingress linkerd
 
 cluster:
-	@echo "🔧 Creating Kind cluster..."
+	@echo "Creating Kind cluster..."
 	kind create cluster --name $(CLUSTER_NAME) --config kind-config.yaml || echo "Cluster might already exist"
 
 ingress:
-	@echo "🚪 Installing Nginx Ingress Controller..."
+	@echo "Installing Nginx Ingress Controller..."
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-	@echo "💤 Giving K8s a moment to create pods..."
+	@echo "Giving K8s a moment to create pods..."
 	sleep 10
-	@echo "⏳ Waiting for Ingress..."
+	@echo "Waiting for Ingress..."
 	kubectl wait --namespace ingress-nginx \
 	  --for=condition=ready pod \
 	  --selector=app.kubernetes.io/component=controller \
 	  --timeout=180s
 
 linkerd:
-	@echo "🛡️ Installing Linkerd Service Mesh..."
+	@echo "Installing Linkerd Service Mesh..."
 	linkerd install --crds | kubectl apply -f -
 	linkerd install | kubectl apply -f -
-	@echo "⏳ Waiting for Linkerd..."
+	@echo "Waiting for Linkerd..."
 	linkerd check
 
 .PHONY: images build-auth load-auth build-docs load-docs build-files load-files
 
 images: build-auth load-auth build-docs load-docs build-files load-files
-	@echo "🐳 All images built and loaded."
+	@echo "All images built and loaded."
 
 build-auth:
 	docker build -t $(REPO_PREFIX)/codex-auth:$(IMAGE_TAG) ../codex-auth
@@ -59,7 +59,7 @@ load-files:
 .PHONY: deploy-all deploy-auth deploy-docs deploy-files
 
 deploy-all: deploy-auth deploy-docs deploy-files
-	@echo "✅ All services deployed via Helm."
+	@echo "All services deployed via Helm."
 
 deploy-auth:
 	helm upgrade --install codex-auth ./charts/codex-service-chart \

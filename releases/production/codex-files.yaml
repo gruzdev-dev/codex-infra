@@ -1,8 +1,7 @@
-# Values for the codex-files microservice
 replicaCount: 1
 
 image:
-  repository: gruzdev-dev/codex-files # Замени на свой реальный Docker-репозиторий
+  repository: gruzdev-dev/codex-files
   tag: "0.1.0"
 
 service:

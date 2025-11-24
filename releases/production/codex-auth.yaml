@@ -1,24 +1,19 @@
-# Values for the codex-auth microservice
 replicaCount: 1
 
 image:
-  repository: gruzdev-dev/codex-auth # Замени на свой реальный Docker-репозиторий
+  repository: gruzdev-dev/codex-auth
   tag: "0.1.0"
 
 service:
   port: 8080
 
-# Enable Service Mesh injection for this pod
 podAnnotations:
   linkerd.io/inject: enabled
 
-# Enable and configure Network Policy
 networkPolicy:
   enabled: true
   ingress:
-    # Allow traffic only from the API Gateway
     - from:
       - podSelector:
           matchLabels:
-            # Укажи здесь метку, которая будет у твоего API Gateway
             app.kubernetes.io/name: ingress-nginx 

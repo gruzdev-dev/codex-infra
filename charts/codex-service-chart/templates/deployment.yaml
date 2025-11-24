@@ -28,7 +28,6 @@ spec:
               protocol: TCP
           env:
             {{- toYaml .Values.env | nindent 12 }}
-          # Liveness and Readiness probes should be configured here
           livenessProbe:
             httpGet:
               path: /healthz

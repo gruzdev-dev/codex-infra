@@ -1,34 +1,19 @@
-# Default values for codex-service-chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 replicaCount: 1
 
 image:
-  repository: nginx # Placeholder, will be overridden
+  repository: nginx
   pullPolicy: IfNotPresent
-  tag: "stable" # Placeholder, will be overridden
+  tag: "stable" 
 
 service:
   type: ClusterIP
   port: 8080
 
-# Annotations to be added to the pod.
-# Used for Service Mesh injection.
 podAnnotations: {}
   # linkerd.io/inject: enabled
 
-# Environment variables for the container
 env: []
-  # - name: DATABASE_URL
-  #   value: "your-db-url"
 
-# NetworkPolicy configuration
 networkPolicy:
   enabled: false
-  # By default, deny all ingress traffic to the pod
   ingress: []
-  # - from:
-  #   - podSelector:
-  #       matchLabels:
-  #         app.kubernetes.io/name: api-gateway
