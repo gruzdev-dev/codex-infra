@@ -8,6 +8,22 @@ image:
 service:
   port: 8081
 
+database:
+  enabled: true
+  image: "mongo:8.0"
+  port: 27017
+  env:
+    - name: MONGO_INITDB_ROOT_USERNAME
+      value: "admin"
+    - name: MONGO_INITDB_ROOT_PASSWORD
+      value: "admin_secret"
+    - name: MONGO_INITDB_DATABASE
+      value: "codex_documents"
+    - name: MONGO_INITDB_USERNAME
+      value: "codex_documents"
+    - name: MONGO_INITDB_PASSWORD
+      value: "secret"
+
 ingress:
   enabled: true
   className: "nginx"

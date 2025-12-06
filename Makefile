@@ -54,9 +54,9 @@ $(foreach svc,$(SERVICES),$(eval load-$(svc): ; $$(call load-service,$(svc))))
 load: $(addprefix load-,$(SERVICES))
 
 define deploy-service
-helm upgrade --install codex-$(1) ./charts/codex \
+helm upgrade --install $(1) ./charts/codex \
 	--namespace $(NAMESPACE) \
-	-f ./releases/codex-$(1).yaml
+	-f ./releases/$(1).yaml
 endef
 
 $(foreach svc,$(SERVICES),$(eval deploy-$(svc): load-$(svc) ; $$(call deploy-service,$(svc))))

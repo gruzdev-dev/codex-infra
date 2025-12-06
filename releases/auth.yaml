@@ -8,6 +8,18 @@ image:
 service:
   port: 8080
 
+database:
+  enabled: true
+  image: "postgres:16-alpine"
+  port: 5432
+  env:
+    - name: POSTGRES_USER
+      value: "codex_auth"
+    - name: POSTGRES_PASSWORD
+      value: "secret"
+    - name: POSTGRES_DB
+      value: "codex_auth"
+
 ingress:
   enabled: true
   className: "nginx"

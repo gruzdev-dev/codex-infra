@@ -1,0 +1,18 @@
+{{- if .Values.database.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "codex.fullname" . }}-db
+  labels:
+    app.kubernetes.io/name: {{ include "codex.name" . }}-db
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.database.port }}
+      targetPort: db-port
+      protocol: TCP
+      name: db-port
+  selector:
+    app.kubernetes.io/name: {{ include "codex.name" . }}-db
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

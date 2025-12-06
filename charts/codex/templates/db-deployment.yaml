@@ -1,0 +1,37 @@
+{{- if .Values.database.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "codex.fullname" . }}-db
+  labels:
+    app.kubernetes.io/name: {{ include "codex.name" . }}-db
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "codex.name" . }}-db
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app.kubernetes.io/name: {{ include "codex.name" . }}-db
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: database
+          image: "{{ .Values.database.image }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: db-port
+              containerPort: {{ .Values.database.port }}
+              protocol: TCP
+          env:
+            {{- range .Values.database.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          # TODO add PVC
+{{- end }}

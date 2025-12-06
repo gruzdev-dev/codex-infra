@@ -18,3 +18,7 @@ env: []
 networkPolicy:
   enabled: false
   ingress: []
+
+database:
+  enabled: false
+  env: []
