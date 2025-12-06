@@ -1,0 +1,43 @@
+{{- if .Values.database.migrations.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "codex.fullname" . }}-migration
+  labels:
+    {{- include "codex.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        {{- include "codex.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "codex.fullname" . }}-db {{ .Values.database.port }}; do
+                echo "Waiting for database..."
+                sleep 2
+              done
+              echo "Database is ready!"
+      containers:
+        - name: migrator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["./migrator"]
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          resources: {}
+{{- end }}
+

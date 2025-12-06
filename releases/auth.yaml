@@ -5,6 +5,12 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
+env:
+  - name: DATABASE_URL
+    value: "postgres://codex_auth:secret@auth-db:5432/codex_auth"
+  - name: JWT_SECRET
+    value: "jwt_secret"
+
 service:
   port: 8080
 
@@ -19,6 +25,8 @@ database:
       value: "secret"
     - name: POSTGRES_DB
       value: "codex_auth"
+  migrations:
+    enabled: true
 
 ingress:
   enabled: true
