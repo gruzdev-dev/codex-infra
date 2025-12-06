@@ -1,0 +1,33 @@
+replicaCount: 1
+
+image:
+  repository: gruzdev-dev/codex-auth
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: localhost
+      paths:
+        - path: /auth(/|$)(.*)
+          pathType: ImplementationSpecific
+
+podAnnotations:
+  linkerd.io/inject: enabled
+
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: ingress-nginx
+      - podSelector: {}

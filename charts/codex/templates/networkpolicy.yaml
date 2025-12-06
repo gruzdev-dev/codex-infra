@@ -2,13 +2,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "codex-service-chart.fullname" . }}
+  name: {{ include "codex.fullname" . }}
   labels:
-    {{- include "codex-service-chart.labels" . | nindent 4 }}
+    {{- include "codex.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      {{- include "codex-service-chart.selectorLabels" . | nindent 6 }}
+      {{- include "codex.selectorLabels" . | nindent 6 }}
   policyTypes:
     - Ingress
   ingress:

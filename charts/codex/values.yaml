@@ -10,7 +10,8 @@ service:
   port: 8080
 
 podAnnotations: {}
-  # linkerd.io/inject: enabled
+
+linkerd.io/inject: enabled
 
 env: []
 

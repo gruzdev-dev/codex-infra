@@ -1,86 +1,86 @@
-CLUSTER_NAME := codex-cluster
+CLUSTER_NAME := codex
+NAMESPACE := codex
+INGRESS_NAMESPACE := ingress-nginx
 IMAGE_TAG := 0.1.0
 REPO_PREFIX := gruzdev-dev
 
-.PHONY: up down restart
+.PHONY: init up down cluster ingress linkerd restart load-auth load-docs load-files deploy deploy-auth deploy-docs deploy-files status
 
-up: cluster ingress linkerd images deploy-all
-	@echo "🚀 Codex System (Auth, Docs, Files) is UP and RUNNING!"
+init: cluster ingress linkerd namespace
+	@echo "Initialization environment completed"
+
+up: init deploy
+	@echo "Codex System is UP and RUNNING!"
 
 down:
 	kind delete cluster --name $(CLUSTER_NAME)
 
 restart: down up
 
-.PHONY: cluster ingress linkerd
-
 cluster:
 	@echo "Creating Kind cluster..."
-	kind create cluster --name $(CLUSTER_NAME) --config kind-config.yaml || echo "Cluster might already exist"
+	kind create cluster --name $(CLUSTER_NAME) --config kind-config.yaml
 
 ingress:
 	@echo "Installing Nginx Ingress Controller..."
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-	@echo "Giving K8s a moment to create pods..."
-	sleep 10
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml || true
 	@echo "Waiting for Ingress..."
-	kubectl wait --namespace ingress-nginx \
+	kubectl wait --namespace $(INGRESS_NAMESPACE) \
 	  --for=condition=ready pod \
 	  --selector=app.kubernetes.io/component=controller \
-	  --timeout=180s
+	  --timeout=180s || echo "Ingress already ready"
 
 linkerd:
+	@echo "Installing Gateway API CRDs..."
+	kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml || true
 	@echo "Installing Linkerd Service Mesh..."
-	linkerd install --crds | kubectl apply -f -
-	linkerd install | kubectl apply -f -
+	linkerd install --crds | kubectl apply -f - || true
+	linkerd install | kubectl apply -f - || true
 	@echo "Waiting for Linkerd..."
 	linkerd check
 
-.PHONY: images build-auth load-auth build-docs load-docs build-files load-files
+namespace:
+	kubectl create namespace $(NAMESPACE) || echo "Namespace might already exist"
 
-images: build-auth load-auth build-docs load-docs build-files load-files
-	@echo "All images built and loaded."
-
-build-auth:
-	docker build -t $(REPO_PREFIX)/codex-auth:$(IMAGE_TAG) ../codex-auth
 load-auth:
+	docker build -t $(REPO_PREFIX)/codex-auth:$(IMAGE_TAG) ../codex-auth
 	kind load docker-image $(REPO_PREFIX)/codex-auth:$(IMAGE_TAG) --name $(CLUSTER_NAME)
 
-build-docs:
-	docker build -t $(REPO_PREFIX)/codex-documents:$(IMAGE_TAG) ../codex-documents
 load-docs:
+	docker build -t $(REPO_PREFIX)/codex-documents:$(IMAGE_TAG) ../codex-documents
 	kind load docker-image $(REPO_PREFIX)/codex-documents:$(IMAGE_TAG) --name $(CLUSTER_NAME)
 
-build-files:
-	docker build -t $(REPO_PREFIX)/codex-files:$(IMAGE_TAG) ../codex-files
 load-files:
+	docker build -t $(REPO_PREFIX)/codex-files:$(IMAGE_TAG) ../codex-files
 	kind load docker-image $(REPO_PREFIX)/codex-files:$(IMAGE_TAG) --name $(CLUSTER_NAME)
 
-.PHONY: deploy-all deploy-auth deploy-docs deploy-files
-
-deploy-all: deploy-auth deploy-docs deploy-files
+deploy: deploy-auth deploy-docs deploy-files
 	@echo "All services deployed via Helm."
+	kubectl get pods -n $(NAMESPACE)
 
-deploy-auth:
-	helm upgrade --install codex-auth ./charts/codex-service-chart \
-		-f ./releases/production/codex-auth.yaml \
+deploy-auth: load-auth
+	helm upgrade --install codex-auth ./charts/codex \
+		--namespace $(NAMESPACE) \
+		-f ./releases/codex-auth.yaml \
 		--set image.tag=$(IMAGE_TAG) \
 		--set env[0].name=SERVER_PORT \
-		--set env[0].value="8080"
+		--set-string env[0].value=8080
 
-deploy-docs:
-	helm upgrade --install codex-documents ./charts/codex-service-chart \
-		-f ./releases/production/codex-documents.yaml \
+deploy-docs: load-docs
+	helm upgrade --install codex-documents ./charts/codex \
+		--namespace $(NAMESPACE) \
+		-f ./releases/codex-documents.yaml \
 		--set image.tag=$(IMAGE_TAG) \
 		--set env[0].name=SERVER_PORT \
-		--set env[0].value="8081"
+		--set-string env[0].value=8081
 
-deploy-files:
-	helm upgrade --install codex-files ./charts/codex-service-chart \
-		-f ./releases/production/codex-files.yaml \
+deploy-files: load-files
+	helm upgrade --install codex-files ./charts/codex \
+		--namespace $(NAMESPACE) \
+		-f ./releases/codex-files.yaml \
 		--set image.tag=$(IMAGE_TAG) \
 		--set env[0].name=SERVER_PORT \
-		--set env[0].value="8082"
+		--set-string env[0].value=8082
 
 status:
-	kubectl get pods -A
+	kubectl get pods -A -n $(NAMESPACE)

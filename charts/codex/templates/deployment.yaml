@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "codex-service-chart.fullname" . }}
+  name: {{ include "codex.fullname" . }}
   labels:
-    {{- include "codex-service-chart.labels" . | nindent 4 }}
+    {{- include "codex.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "codex-service-chart.selectorLabels" . | nindent 6 }}
+      {{- include "codex.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,7 +16,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "codex-service-chart.selectorLabels" . | nindent 8 }}
+        {{- include "codex.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Chart.Name }}

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: codex-service-chart
+name: codex
 description: A Helm chart for deploying Codex microservices
 type: application
 version: 0.1.0
