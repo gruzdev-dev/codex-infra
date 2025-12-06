@@ -27,7 +27,12 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           env:
-            {{- toYaml .Values.env | nindent 12 }}
+            - name: SERVER_PORT
+              value: "{{ .Values.service.port }}"
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz

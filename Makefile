@@ -3,8 +3,10 @@ NAMESPACE := codex
 INGRESS_NAMESPACE := ingress-nginx
 IMAGE_TAG := 0.1.0
 REPO_PREFIX := gruzdev-dev
+SERVICES := auth documents files
 
-.PHONY: init up down cluster ingress linkerd restart load-auth load-docs load-files deploy deploy-auth deploy-docs deploy-files status
+.PHONY: init up down cluster ingress linkerd restart load deploy status
+.PHONY: $(addprefix load-,$(SERVICES)) $(addprefix deploy-,$(SERVICES))
 
 init: cluster ingress linkerd namespace
 	@echo "Initialization environment completed"
@@ -42,45 +44,26 @@ linkerd:
 namespace:
 	kubectl create namespace $(NAMESPACE) || echo "Namespace might already exist"
 
-load-auth:
-	docker build -t $(REPO_PREFIX)/codex-auth:$(IMAGE_TAG) ../codex-auth
-	kind load docker-image $(REPO_PREFIX)/codex-auth:$(IMAGE_TAG) --name $(CLUSTER_NAME)
+define load-service
+docker build -t $(REPO_PREFIX)/codex-$(1):$(IMAGE_TAG) ../codex-$(1)
+kind load docker-image $(REPO_PREFIX)/codex-$(1):$(IMAGE_TAG) --name $(CLUSTER_NAME)
+endef
 
-load-docs:
-	docker build -t $(REPO_PREFIX)/codex-documents:$(IMAGE_TAG) ../codex-documents
-	kind load docker-image $(REPO_PREFIX)/codex-documents:$(IMAGE_TAG) --name $(CLUSTER_NAME)
+$(foreach svc,$(SERVICES),$(eval load-$(svc): ; $$(call load-service,$(svc))))
 
-load-files:
-	docker build -t $(REPO_PREFIX)/codex-files:$(IMAGE_TAG) ../codex-files
-	kind load docker-image $(REPO_PREFIX)/codex-files:$(IMAGE_TAG) --name $(CLUSTER_NAME)
+load: $(addprefix load-,$(SERVICES))
 
-deploy: deploy-auth deploy-docs deploy-files
+define deploy-service
+helm upgrade --install codex-$(1) ./charts/codex \
+	--namespace $(NAMESPACE) \
+	-f ./releases/codex-$(1).yaml
+endef
+
+$(foreach svc,$(SERVICES),$(eval deploy-$(svc): load-$(svc) ; $$(call deploy-service,$(svc))))
+
+deploy: $(addprefix deploy-,$(SERVICES))
 	@echo "All services deployed via Helm."
 	kubectl get pods -n $(NAMESPACE)
-
-deploy-auth: load-auth
-	helm upgrade --install codex-auth ./charts/codex \
-		--namespace $(NAMESPACE) \
-		-f ./releases/codex-auth.yaml \
-		--set image.tag=$(IMAGE_TAG) \
-		--set env[0].name=SERVER_PORT \
-		--set-string env[0].value=8080
-
-deploy-docs: load-docs
-	helm upgrade --install codex-documents ./charts/codex \
-		--namespace $(NAMESPACE) \
-		-f ./releases/codex-documents.yaml \
-		--set image.tag=$(IMAGE_TAG) \
-		--set env[0].name=SERVER_PORT \
-		--set-string env[0].value=8081
-
-deploy-files: load-files
-	helm upgrade --install codex-files ./charts/codex \
-		--namespace $(NAMESPACE) \
-		-f ./releases/codex-files.yaml \
-		--set image.tag=$(IMAGE_TAG) \
-		--set env[0].name=SERVER_PORT \
-		--set-string env[0].value=8082
 
 status:
 	kubectl get pods -A -n $(NAMESPACE)
