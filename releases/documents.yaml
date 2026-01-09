@@ -10,9 +10,18 @@ env:
     value: "mongodb://codex_documents:secret@documents-db:27017/codex_documents?authSource=codex_documents"
   - name: MONGO_DATABASE
     value: "codex_documents"
+  - name: INTERNAL_SERVICE_SECRET
+    value: "internal_service_secret"
+  - name: JWT_SECRET
+    value: "jwt_secret"
 
 service:
-  port: 8080
+  http:
+    enabled: true
+    port: 8080
+  grpc:
+    enabled: true
+    port: 8081
 
 database:
   enabled: true

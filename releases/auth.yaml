@@ -10,9 +10,17 @@ env:
     value: "postgres://codex_auth:secret@auth-db:5432/codex_auth"
   - name: JWT_SECRET
     value: "jwt_secret"
+  - name: INTERNAL_SERVICE_SECRET
+    value: "internal_service_secret"
+  - name: DOCUMENTS_SERVICE_ADDR
+    value: "documents.codex.svc.cluster.local:8081"
 
 service:
-  port: 8080
+  http:
+    enabled: true
+    port: 8080
+  grpc:
+    enabled: false
 
 database:
   enabled: true

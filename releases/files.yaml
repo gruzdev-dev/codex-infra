@@ -5,8 +5,16 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
+env:
+  - name: INTERNAL_SERVICE_SECRET
+    value: "internal_service_secret"
+
 service:
-  port: 8080
+  http:
+    enabled: true
+    port: 8080
+  grpc:
+    enabled: false
 
 ingress:
   enabled: true

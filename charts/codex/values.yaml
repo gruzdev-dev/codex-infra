@@ -7,7 +7,12 @@ image:
 
 service:
   type: ClusterIP
-  port: 8080
+  http:
+    enabled: true
+    port: 8080
+  grpc:
+    enabled: false
+    port: 8081
 
 podAnnotations: {}
 

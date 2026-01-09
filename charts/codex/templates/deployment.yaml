@@ -28,16 +28,32 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
+            {{- if .Values.service.http.enabled }}
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.service.http.port }}
               protocol: TCP
+            {{- end }}
+            {{- if .Values.service.grpc.enabled }}
+            - name: grpc
+              containerPort: {{ .Values.service.grpc.port }}
+              protocol: TCP
+            {{- end }}
           env:
+            {{- if .Values.service.http.enabled }}
+            - name: HTTP_PORT
+              value: "{{ .Values.service.http.port }}"
             - name: SERVER_PORT
-              value: "{{ .Values.service.port }}"
+              value: "{{ .Values.service.http.port }}"
+            {{- end }}
+            {{- if .Values.service.grpc.enabled }}
+            - name: GRPC_PORT
+              value: "{{ .Values.service.grpc.port }}"
+            {{- end }}
             {{- range .Values.env }}
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
+          {{- if .Values.service.http.enabled }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -46,4 +62,5 @@ spec:
             httpGet:
               path: /readyz
               port: http
+          {{- end }}
           resources: {}
