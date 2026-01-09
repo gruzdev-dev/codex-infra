@@ -5,8 +5,14 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
+env:
+  - name: MONGO_URI
+    value: "mongodb://codex_documents:secret@documents-db:27017/codex_documents?authSource=codex_documents"
+  - name: MONGO_DATABASE
+    value: "codex_documents"
+
 service:
-  port: 8081
+  port: 8080
 
 database:
   enabled: true
@@ -23,6 +29,8 @@ database:
       value: "codex_documents"
     - name: MONGO_INITDB_PASSWORD
       value: "secret"
+  migrations:
+    enabled: false
 
 ingress:
   enabled: true

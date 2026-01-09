@@ -1,0 +1,100 @@
+{{- if and .Values.database.enabled (contains "mongo" (.Values.database.image | lower)) -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "codex.fullname" . }}-mongo-init
+  labels:
+    {{- include "codex.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "3"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "codex.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "codex.fullname" . }}-db {{ .Values.database.port }}; do
+                echo "Waiting for MongoDB..."
+                sleep 2
+              done
+              echo "MongoDB is ready!"
+      containers:
+        - name: mongo-init
+          image: "{{ .Values.database.image }}"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MongoDB to accept connections..."
+              until mongosh --host {{ include "codex.fullname" . }}-db --port ${MONGO_PORT} \
+                -u ${MONGO_ROOT_USERNAME} \
+                -p ${MONGO_ROOT_PASSWORD} \
+                --authenticationDatabase admin \
+                --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
+                echo "Waiting for MongoDB authentication..."
+                sleep 2
+              done
+              
+              echo "Creating user ${MONGO_USERNAME} in database ${MONGO_DATABASE}..."
+              mongosh --host {{ include "codex.fullname" . }}-db --port ${MONGO_PORT} \
+                -u ${MONGO_ROOT_USERNAME} \
+                -p ${MONGO_ROOT_PASSWORD} \
+                --authenticationDatabase admin \
+                --eval "
+                  var targetDb = db.getSiblingDB('${MONGO_DATABASE}');
+                  var users = targetDb.getUsers();
+                  var userExists = users.users.some(function(u) { return u.user === '${MONGO_USERNAME}'; });
+                  
+                  if (userExists) {
+                    print('User already exists, skipping creation.');
+                  } else {
+                    targetDb.createUser({
+                      user: '${MONGO_USERNAME}',
+                      pwd: '${MONGO_PASSWORD}',
+                      roles: [{ role: 'readWrite', db: '${MONGO_DATABASE}' }]
+                    });
+                    print('User created successfully');
+                  }
+                " 2>&1 || {
+                  echo "Warning: Failed to create/check user, but continuing..."
+                  exit 0
+                }
+              echo "MongoDB user initialization completed!"
+          env:
+            - name: MONGO_PORT
+              value: "{{ .Values.database.port }}"
+            {{- range .Values.database.env }}
+            {{- if eq .name "MONGO_INITDB_ROOT_USERNAME" }}
+            - name: MONGO_ROOT_USERNAME
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- if eq .name "MONGO_INITDB_ROOT_PASSWORD" }}
+            - name: MONGO_ROOT_PASSWORD
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- if eq .name "MONGO_INITDB_DATABASE" }}
+            - name: MONGO_DATABASE
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- if eq .name "MONGO_INITDB_USERNAME" }}
+            - name: MONGO_USERNAME
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- if eq .name "MONGO_INITDB_PASSWORD" }}
+            - name: MONGO_PASSWORD
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+          resources: {}
+{{- end }}

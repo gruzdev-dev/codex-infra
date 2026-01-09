@@ -1,4 +1,4 @@
-{{- if .Values.database.migrations.enabled -}}
+{{- if and .Values.database.enabled (hasKey .Values.database "migrations") .Values.database.migrations.enabled -}}
 apiVersion: batch/v1
 kind: Job
 metadata:

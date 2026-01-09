@@ -4,7 +4,7 @@ metadata:
   name: {{ include "codex.fullname" . }}
   labels:
     {{- include "codex.labels" . | nindent 4 }}
-  {{- if .Values.database.migrations.enabled }}
+  {{- if and (hasKey .Values "database") (hasKey .Values.database "migrations") .Values.database.migrations.enabled }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "10"
