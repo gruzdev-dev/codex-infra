@@ -5,9 +5,21 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
-env:
-  - name: INTERNAL_SERVICE_SECRET
-    value: "internal_service_secret"
+configMap:
+  POSTGRES_HOST: "files-db"
+  POSTGRES_DB: "codex_files"
+  S3_ENDPOINT: "http://minio-minio.codex.svc.cluster.local:9000"
+  S3_PUBLIC_URL: "http://s3.codex.local"
+  MINIO_BUCKET: "medical-documents"
+  MINIO_USE_SSL: "false"
+
+secret:
+  JWT_SECRET: "jwt_secret"
+  INTERNAL_SERVICE_SECRET: "internal_service_secret"
+  POSTGRES_USER: "codex_files"
+  POSTGRES_PASSWORD: "secret"
+  MINIO_ACCESS_KEY: "minioadmin"
+  MINIO_SECRET_KEY: "minioadmin"
 
 service:
   http:
@@ -15,6 +27,13 @@ service:
     port: 8080
   grpc:
     enabled: false
+
+database:
+  enabled: true
+  image: "postgres:16-alpine"
+  port: 5432
+  migrations:
+    enabled: true
 
 ingress:
   enabled: true

@@ -5,15 +5,24 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
-env:
-  - name: MONGO_URI
-    value: "mongodb://codex_documents:secret@documents-db:27017/codex_documents?authSource=codex_documents"
-  - name: MONGO_DATABASE
-    value: "codex_documents"
-  - name: INTERNAL_SERVICE_SECRET
-    value: "internal_service_secret"
-  - name: JWT_SECRET
-    value: "jwt_secret"
+configMap:
+  MONGO_HOST: "documents-db"
+  MONGO_PORT: "27017"
+  MONGO_DATABASE: "codex_documents"
+  MONGO_AUTH_SOURCE: "codex_documents"
+  MONGO_INITDB_DATABASE: "codex_documents"
+
+secret:
+  JWT_SECRET: "jwt_secret"
+  INTERNAL_SERVICE_SECRET: "internal_service_secret"
+  MONGO_ROOT_USERNAME: "admin"
+  MONGO_ROOT_PASSWORD: "admin_secret"
+  MONGO_USERNAME: "codex_documents"
+  MONGO_PASSWORD: "secret"
+  MONGO_INITDB_ROOT_USERNAME: "admin"
+  MONGO_INITDB_ROOT_PASSWORD: "admin_secret"
+  MONGO_INITDB_USERNAME: "codex_documents"
+  MONGO_INITDB_PASSWORD: "secret"
 
 service:
   http:
@@ -27,17 +36,6 @@ database:
   enabled: true
   image: "mongo:8.0"
   port: 27017
-  env:
-    - name: MONGO_INITDB_ROOT_USERNAME
-      value: "admin"
-    - name: MONGO_INITDB_ROOT_PASSWORD
-      value: "admin_secret"
-    - name: MONGO_INITDB_DATABASE
-      value: "codex_documents"
-    - name: MONGO_INITDB_USERNAME
-      value: "codex_documents"
-    - name: MONGO_INITDB_PASSWORD
-      value: "secret"
   migrations:
     enabled: false
 

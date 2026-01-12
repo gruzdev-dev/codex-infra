@@ -74,27 +74,20 @@ spec:
           env:
             - name: MONGO_PORT
               value: "{{ .Values.database.port }}"
+            {{- if .Values.database.env }}
             {{- range .Values.database.env }}
-            {{- if eq .name "MONGO_INITDB_ROOT_USERNAME" }}
-            - name: MONGO_ROOT_USERNAME
+            - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
-            {{- if eq .name "MONGO_INITDB_ROOT_PASSWORD" }}
-            - name: MONGO_ROOT_PASSWORD
-              value: {{ .value | quote }}
             {{- end }}
-            {{- if eq .name "MONGO_INITDB_DATABASE" }}
-            - name: MONGO_DATABASE
-              value: {{ .value | quote }}
+          envFrom:
+            {{- if .Values.configMap }}
+            - configMapRef:
+                name: {{ include "codex.fullname" . }}-config
             {{- end }}
-            {{- if eq .name "MONGO_INITDB_USERNAME" }}
-            - name: MONGO_USERNAME
-              value: {{ .value | quote }}
-            {{- end }}
-            {{- if eq .name "MONGO_INITDB_PASSWORD" }}
-            - name: MONGO_PASSWORD
-              value: {{ .value | quote }}
-            {{- end }}
+            {{- if .Values.secret }}
+            - secretRef:
+                name: {{ include "codex.fullname" . }}-secret
             {{- end }}
           resources: {}
 {{- end }}

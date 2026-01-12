@@ -5,15 +5,16 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
-env:
-  - name: DATABASE_URL
-    value: "postgres://codex_auth:secret@auth-db:5432/codex_auth"
-  - name: JWT_SECRET
-    value: "jwt_secret"
-  - name: INTERNAL_SERVICE_SECRET
-    value: "internal_service_secret"
-  - name: DOCUMENTS_SERVICE_ADDR
-    value: "documents.codex.svc.cluster.local:8081"
+configMap:
+  POSTGRES_HOST: "auth-db"
+  POSTGRES_DB: "codex_auth"
+  DOCUMENTS_SERVICE_ADDR: "documents.codex.svc.cluster.local:8081"
+
+secret:
+  JWT_SECRET: "jwt_secret"
+  INTERNAL_SERVICE_SECRET: "internal_service_secret"
+  POSTGRES_USER: "codex_auth"
+  POSTGRES_PASSWORD: "secret"
 
 service:
   http:
@@ -26,13 +27,6 @@ database:
   enabled: true
   image: "postgres:16-alpine"
   port: 5432
-  env:
-    - name: POSTGRES_USER
-      value: "codex_auth"
-    - name: POSTGRES_PASSWORD
-      value: "secret"
-    - name: POSTGRES_DB
-      value: "codex_auth"
   migrations:
     enabled: true
 

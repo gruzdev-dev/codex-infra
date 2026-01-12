@@ -28,10 +28,20 @@ spec:
             - name: db-port
               containerPort: {{ .Values.database.port }}
               protocol: TCP
+          envFrom:
+            {{- if .Values.configMap }}
+            - configMapRef:
+                name: {{ include "codex.fullname" . }}-config
+            {{- end }}
+            {{- if .Values.secret }}
+            - secretRef:
+                name: {{ include "codex.fullname" . }}-secret
+            {{- end }}
+          {{- if .Values.database.env }}
           env:
             {{- range .Values.database.env }}
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
-          # TODO add PVC
+          {{- end }}
 {{- end }}

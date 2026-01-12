@@ -33,11 +33,22 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["./migrator"]
+          envFrom:
+            {{- if .Values.configMap }}
+            - configMapRef:
+                name: {{ include "codex.fullname" . }}-config
+            {{- end }}
+            {{- if .Values.secret }}
+            - secretRef:
+                name: {{ include "codex.fullname" . }}-secret
+            {{- end }}
+          {{- if .Values.env }}
           env:
             {{- range .Values.env }}
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
+          {{- end }}
           resources: {}
 {{- end }}
 

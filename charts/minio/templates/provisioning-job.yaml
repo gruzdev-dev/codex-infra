@@ -1,0 +1,65 @@
+{{- if .Values.provisioning.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "minio.fullname" . }}-provisioning
+  labels:
+    {{- include "minio.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "minio.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-minio
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "minio.fullname" . }} 9000; do
+                echo "Waiting for MinIO..."
+                sleep 2
+              done
+              echo "MinIO is ready!"
+      containers:
+        - name: mc-provisioning
+          image: minio/mc:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Setting up MinIO alias..."
+              mc alias set minio http://{{ include "minio.fullname" . }}:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+              
+              echo "Checking if bucket exists..."
+              if mc ls minio/{{ .Values.provisioning.bucket }} >/dev/null 2>&1; then
+                echo "Bucket {{ .Values.provisioning.bucket }} already exists, skipping creation."
+              else
+                echo "Creating bucket {{ .Values.provisioning.bucket }}..."
+                mc mb minio/{{ .Values.provisioning.bucket }}
+                echo "Bucket created successfully!"
+              fi
+              
+              echo "MinIO provisioning completed!"
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "minio.fullname" . }}-secret
+                  key: minio-root-user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "minio.fullname" . }}-secret
+                  key: minio-root-password
+          resources: {}
+{{- end }}
