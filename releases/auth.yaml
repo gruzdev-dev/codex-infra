@@ -21,7 +21,8 @@ service:
     enabled: true
     port: 8080
   grpc:
-    enabled: false
+    enabled: true
+    port: 8081
 
 database:
   enabled: true

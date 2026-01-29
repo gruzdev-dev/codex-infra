@@ -11,6 +11,8 @@ configMap:
   MONGO_DATABASE: "codex_documents"
   MONGO_AUTH_SOURCE: "codex_documents"
   MONGO_INITDB_DATABASE: "codex_documents"
+  AUTH_SERVICE_ADDR: "auth.codex.svc.cluster.local:8081"
+  FILES_SERVICE_ADDR: "files.codex.svc.cluster.local:8081"
 
 secret:
   JWT_SECRET: "jwt_secret"
@@ -46,8 +48,6 @@ ingress:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/auth-url: "http://auth.codex.svc.cluster.local:8080/api/v1/validate"
-    nginx.ingress.kubernetes.io/auth-response-headers: "X-User-Id"
-
   hosts:
     - host: localhost
       paths:
