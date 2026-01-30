@@ -47,6 +47,15 @@ spec:
                 secretKeyRef:
                   name: {{ include "minio.fullname" . }}-secret
                   key: minio-root-password
+            {{- if and .Values.notify.webhook.enabled .Values.notify.webhook.endpoint }}
+            - name: MINIO_NOTIFY_WEBHOOK_ENABLE_{{ .Values.notify.webhook.identifier }}
+              value: "on"
+            - name: MINIO_NOTIFY_WEBHOOK_ENDPOINT_{{ .Values.notify.webhook.identifier }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "minio.fullname" . }}-secret
+                  key: webhook-endpoint
+            {{- end }}
           {{- if .Values.pvc.enabled }}
           volumeMounts:
             - name: minio-storage

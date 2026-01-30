@@ -13,7 +13,7 @@ GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: init up down cluster ingress linkerd restart load deploy deploy-minio redeploy status
+.PHONY: init up down cluster ingress linkerd restart load deploy deploy-minio patch-coredns minio-events redeploy status linkerd-policies
 .PHONY: $(addprefix load-,$(SERVICES)) $(addprefix deploy-,$(SERVICES)) $(addprefix redeploy-,$(SERVICES))
 
 init: cluster ingress linkerd namespace
@@ -46,6 +46,14 @@ ingress:
 		 echo "$(GREEN)[OK]$(RESET)") || \
 		(echo "$(RED)[FAILED]$(RESET)"; exit 1); \
 	fi
+	@printf "$(YELLOW)Enabling snippet annotations...$(RESET) "
+	@kubectl patch configmap ingress-nginx-controller -n $(INGRESS_NAMESPACE) --type merge -p '{"data":{"allow-snippet-annotations":"true",annotations-risk-level:"Critical"}}' 2>/dev/null && \
+		kubectl rollout restart deployment ingress-nginx-controller -n $(INGRESS_NAMESPACE) 2>/dev/null && \
+		echo "$(GREEN)[OK]$(RESET)" || echo "$(YELLOW)[SKIP or already set]$(RESET)"
+	@printf "$(YELLOW)Meshing ingress-nginx for Linkerd mTLS to backends...$(RESET) "
+	@kubectl annotate namespace $(INGRESS_NAMESPACE) linkerd.io/inject=enabled --overwrite 2>/dev/null && \
+		kubectl rollout restart deployment ingress-nginx-controller -n $(INGRESS_NAMESPACE) 2>/dev/null && \
+		echo "$(GREEN)[OK]$(RESET)" || echo "$(YELLOW)[SKIP]$(RESET)"
 
 linkerd:
 	@printf "$(YELLOW)Checking Linkerd Service Mesh...$(RESET) "
@@ -94,10 +102,30 @@ deploy: $(addprefix deploy-,$(SERVICES))
 	@echo "All services deployed via Helm."
 	kubectl get pods -n $(NAMESPACE)
 
-deploy-minio:
+patch-coredns:
+	@printf "$(YELLOW)Patching CoreDNS for s3.codex.local -> ingress...$(RESET) "
+	@kubectl get configmap coredns -n kube-system -o jsonpath='{.data.Corefile}' > /tmp/coredns-corefile.bak 2>/dev/null || (echo "$(RED)CoreDNS configmap not found$(RESET)" && exit 1)
+	@grep -q 's3.codex.local' /tmp/coredns-corefile.bak && echo "$(GREEN)Rewrite already present$(RESET)" || \
+		(sed '/forward.*resolv.conf/i\        rewrite name s3.codex.local ingress-nginx-controller.$(INGRESS_NAMESPACE).svc.cluster.local' /tmp/coredns-corefile.bak > /tmp/coredns-corefile.new && \
+		kubectl create configmap coredns --from-file=Corefile=/tmp/coredns-corefile.new -n kube-system --dry-run=client -o yaml | kubectl apply -f - && \
+		kubectl rollout restart deployment coredns -n kube-system && \
+		echo "$(GREEN)CoreDNS patched and restarted$(RESET)")
+
+minio-events:
+	@printf "$(YELLOW)Enabling MinIO bucket events for webhook...$(RESET) "
+	@kubectl delete job minio-events -n $(NAMESPACE) --ignore-not-found >/dev/null 2>&1; \
+	kubectl apply -f scripts/minio-events-job.yaml -n $(NAMESPACE) >/dev/null && \
+	kubectl wait -n $(NAMESPACE) --for=condition=complete job/minio-events --timeout=120s >/dev/null 2>&1 && \
+	echo "$(GREEN)OK$(RESET)" || echo "$(YELLOW)SKIP or already configured$(RESET)"
+	@kubectl delete job minio-events -n $(NAMESPACE) --ignore-not-found >/dev/null 2>&1 || true
+
+deploy-minio: patch-coredns
 	helm upgrade --install minio ./charts/minio \
 		--namespace $(NAMESPACE) \
 		-f ./releases/minio.yaml
+	@kubectl rollout status deployment/minio -n $(NAMESPACE) --timeout=120s
+	@sleep 15
+	@$(MAKE) minio-events
 	@echo "MinIO deployed via Helm."
 	@kubectl get pods -n $(NAMESPACE) -l app.kubernetes.io/name=minio
 
@@ -131,3 +159,7 @@ delete: $(addprefix delete-,$(SERVICES))
 
 status:
 	kubectl get pods -A -n $(NAMESPACE)
+
+linkerd-policies:
+	@printf "$(YELLOW)Applying Linkerd policies...$(RESET) "
+	@kubectl apply -f policies/linkerd-policies.yaml && echo "$(GREEN)[OK]$(RESET)" || (echo "$(RED)[FAILED]$(RESET)"; exit 1)

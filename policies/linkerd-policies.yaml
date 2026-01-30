@@ -1,0 +1,176 @@
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: any-mesh-tls
+  namespace: codex
+spec:
+  identities: ["*"]
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: auth-http
+  namespace: codex
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: codex
+      app.kubernetes.io/instance: auth
+  port: 8080
+  proxyProtocol: HTTP/2
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: auth-grpc
+  namespace: codex
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: codex
+      app.kubernetes.io/instance: auth
+  port: 8081
+  proxyProtocol: gRPC
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: documents-http
+  namespace: codex
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: codex
+      app.kubernetes.io/instance: documents
+  port: 8080
+  proxyProtocol: HTTP/2
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: documents-grpc
+  namespace: codex
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: codex
+      app.kubernetes.io/instance: documents
+  port: 8081
+  proxyProtocol: gRPC
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: files-http
+  namespace: codex
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: codex
+      app.kubernetes.io/instance: files
+  port: 8080
+  proxyProtocol: HTTP/2
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: files-grpc
+  namespace: codex
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: codex
+      app.kubernetes.io/instance: files
+  port: 8081
+  proxyProtocol: gRPC
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: auth-http-mtls
+  namespace: codex
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: auth-http
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: any-mesh-tls
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: auth-grpc-mtls
+  namespace: codex
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: auth-grpc
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: any-mesh-tls
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: documents-http-mtls
+  namespace: codex
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: documents-http
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: any-mesh-tls
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: documents-grpc-mtls
+  namespace: codex
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: documents-grpc
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: any-mesh-tls
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: files-http-mtls
+  namespace: codex
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: files-http
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: any-mesh-tls
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: files-grpc-mtls
+  namespace: codex
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: files-grpc
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: any-mesh-tls

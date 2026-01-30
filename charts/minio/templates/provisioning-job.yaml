@@ -39,7 +39,7 @@ spec:
               set -e
               echo "Setting up MinIO alias..."
               mc alias set minio http://{{ include "minio.fullname" . }}:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
-              
+              {{- if .Values.provisioning.bucket }}
               echo "Checking if bucket exists..."
               if mc ls minio/{{ .Values.provisioning.bucket }} >/dev/null 2>&1; then
                 echo "Bucket {{ .Values.provisioning.bucket }} already exists, skipping creation."
@@ -48,7 +48,20 @@ spec:
                 mc mb minio/{{ .Values.provisioning.bucket }}
                 echo "Bucket created successfully!"
               fi
-              
+              {{- end }}
+              {{- if and .Values.notify.webhook.enabled .Values.notify.webhook.endpoint .Values.notify.webhook.identifier .Values.provisioning.bucket }}
+              echo "Waiting for MinIO to register webhook target..."
+              sleep 20
+              echo "Configuring bucket events for webhook..."
+              for i in 1 2 3 4 5 6; do
+                if mc event add minio/{{ .Values.provisioning.bucket }} arn:minio:sqs::{{ .Values.notify.webhook.identifier }}:webhook --event put 2>/dev/null; then
+                  echo "Bucket events configured."
+                  break
+                fi
+                echo "Retry $i/6 in 5s..."
+                sleep 5
+              done
+              {{- end }}
               echo "MinIO provisioning completed!"
           env:
             - name: MINIO_ROOT_USER

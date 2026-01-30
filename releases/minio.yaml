@@ -1,36 +1,18 @@
-replicaCount: 1
-
-image:
-  repository: minio/minio
-  tag: "latest"
-  pullPolicy: IfNotPresent
-
-rootUser: "minioadmin"
-rootPassword: "minioadmin"
-
 pvc:
-  enabled: true
   size: "50Gi"
 
 provisioning:
-  enabled: true
   bucket: "medical-documents"
 
 ingress:
-  enabled: true
-  className: "nginx"
   apiHost: "s3.codex.local"
   consoleHost: "console.s3.codex.local"
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-
-resources:
-  requests:
-    memory: "512Mi"
-    cpu: "250m"
-  limits:
-    memory: "1Gi"
-    cpu: "500m"
 
 podAnnotations:
   linkerd.io/inject: enabled
+
+notify:
+  webhook:
+    enabled: true
+    identifier: "codex"
+    endpoint: "http://files.codex.svc.cluster.local:8080/api/v1/webhook/s3?secret=webhook_secret"

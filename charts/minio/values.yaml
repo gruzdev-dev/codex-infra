@@ -10,17 +10,15 @@ rootPassword: "minioadmin"
 
 pvc:
   enabled: true
-  size: "50Gi"
+  size: "10Gi"
 
 provisioning:
   enabled: true
-  bucket: "medical-documents"
+  bucket: ""
 
 ingress:
   enabled: true
   className: "nginx"
-  apiHost: "s3.codex.local"
-  consoleHost: "console.s3.codex.local"
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 
@@ -32,5 +30,10 @@ resources:
     memory: "1Gi"
     cpu: "500m"
 
-podAnnotations:
-  linkerd.io/inject: enabled
+podAnnotations: {}
+
+notify:
+  webhook:
+    enabled: false
+    identifier: "default"
+    endpoint: ""

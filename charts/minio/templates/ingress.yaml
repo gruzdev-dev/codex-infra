@@ -16,6 +16,7 @@ spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
   {{- end }}
+  {{- if and .Values.ingress.apiHost .Values.ingress.consoleHost }}
   rules:
     - host: {{ .Values.ingress.apiHost | quote }}
       http:
@@ -37,4 +38,5 @@ spec:
                 name: {{ include "minio.fullname" . }}
                 port:
                   number: 9001
+  {{- end }}
 {{- end }}

@@ -8,7 +8,7 @@ image:
 configMap:
   POSTGRES_HOST: "files-db"
   POSTGRES_DB: "codex_files"
-  S3_ENDPOINT: "http://minio-minio.codex.svc.cluster.local:9000"
+  S3_ENDPOINT: "http://minio.codex.svc.cluster.local:9000"
   S3_EXTERNAL_HOST: "s3.codex.local"
   S3_BUCKET: "medical-documents"
   S3_USE_SSL: "false"
@@ -20,6 +20,7 @@ secret:
   POSTGRES_PASSWORD: "secret"
   S3_ACCESS_KEY: "minioadmin"
   S3_SECRET_KEY: "minioadmin"
+  S3_WEBHOOK_SECRET: "webhook_secret"
 
 service:
   http:

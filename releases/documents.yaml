@@ -48,6 +48,8 @@ ingress:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/auth-url: "http://auth.codex.svc.cluster.local:8080/api/v1/validate"
+    nginx.ingress.kubernetes.io/auth-snippet: |
+      proxy_set_header Authorization $http_authorization;
   hosts:
     - host: localhost
       paths:
